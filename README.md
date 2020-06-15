@@ -23,7 +23,7 @@ Performing common visual data analytic tasks using Python and D3.js.
 
 - Performed K-means Clustering for Stratified Sampling using Elbow Method
 
-<img src="./Screenshots/random.JPG" width="450">
+<img src="./Screenshots/Elbow_Plot.png" height="200" width="450">
 
 ## Dimension reduction
 - Shows the bias introduced using the dimensionality reduction on both original and sampled data.
