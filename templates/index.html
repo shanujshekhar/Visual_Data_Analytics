@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <script src = "https://d3js.org/d3.v4.min.js"></script>
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+      <h1><center>CSE-564: Assignment - 2</center></h1>
+   </head>
+   <style>
+body{
+   height: 1000px;
+   background-repeat: no-repeat;
+   /*background-image: radial-gradient(#EDC7B7, #E85A4F, #DAAD86);*/
+   background-image: radial-gradient(#EDF5E1, #05386B);
+}
+path {
+    /*stroke: black;
+    stroke-width: 1.5px;*/
+    fill: none;
+}
+.axis path, .axis line {
+    fill: none;
+    stroke: grey;
+    /*stroke-width: 2px;*/
+    shape-rendering: crispEdges;
+}
+
+.line2{
+   stroke: #116466;
+   stroke-width: 3.5px;
+   fill: none;
+}
+
+.line3{
+   stroke: #ea7a50;
+   stroke-width: 3.5px;
+   fill: none;
+}
+
+.dot, .dot2{
+  fill: #5AB9EA;
+  stroke: black;
+  stroke-width: 2.5px;
+}
+
+.x_axis.y_axis{
+   font-family :sans-serif;
+   font-weight: bold;
+   font-size: 14px;
+}
+
+.tick, .domain{
+   stroke-width: 1px;
+}
+
+
+.intrinsic {
+  fill: #F1F3F3;
+  stroke: #6F257F;
+  stroke-width: 5px;
+}
+
+.title {
+   fill: black;
+   font: 15px sans-serif;
+   font-weight: bold;
+   text-align: center;
+   text-decoration: underline;
+}
+
+#task_menu{
+   position: fixed;
+   border: 2px solid black
+}
+
+#dropdown_menu{
+   visibility: hidden;
+   position: fixed;
+   left: 120px;
+   border: 2px solid black;
+}
+
+#toggle{
+   visibility: hidden;
+   position: fixed;
+   left: 300px;
+   border: 2px solid black;
+}
+
+#dataset{
+   visibility: hidden;
+   position: fixed;
+   left: 450px;
+   border: 2px solid black;
+}
+
+.cell text {
+  font-weight: bold;
+  text-transform: capitalize;
+}
+
+.frame {
+  fill: none;
+  stroke: black;
+}
+
+/*circle {
+  fill-opacity: .7;
+}*/
+   </style>
+
+   <body>
+      <select id = "task_menu"></select>
+      <select id = "dropdown_menu"></select>
+      <select id = "toggle"></select>
+      <select id = "dataset"></select>
+      <svg id="chart"></svg>
+<script type="text/javascript">
+
+var data = {{ data.chart_data | safe }}
+
+options_task2 = ['Select Dataset', 'Original', 'Random' , 'Stratified'];
+options_task3 = ['Select Option', 'Top Two PCA Vectors', 'MDS' , 'ScatterPlot Matrix'];
+tasks = ['Select Task', 'Task-2' ,'Task-3'];
+distance = ['Select Distance', 'Eucledian', 'Co-Relation']
+
+// set the dimensions and margins of the graph
+var margin = {top: 100, right: 20, bottom: 180, left: 200},
+    width = 1060 - margin.left - margin.right,
+    height = 600 - margin.top - margin.bottom;
+
+d3.select('#task_menu').on('change', Task)
+   .selectAll('option')
+      .data(tasks).enter()
+      .append('option')
+   .text(function (d) { return d; })
+   .attr('value', function (d) { return d; })
+
+d3.select("#dropdown_menu")
+      .append("option")
+   .text("Select Option")
+   .attr("value" , "Select Option")
+
+d3.select('#toggle')
+      .selectAll('option')
+         .data(options_task2).enter()
+         .append('option')
+      .text(function (d) { return d; })
+      .attr('value', function (d) { return d; })
+
+function Task(){
+
+   document.getElementById("dropdown_menu").style.visibility = "visible";
+
+   electValue = d3.select('#task_menu').property('value')
+   d3.select('svg').selectAll('*').remove();
+
+   if(electValue=="Task-2"){
+      document.getElementById("toggle").style.visibility = "hidden";
+      document.getElementById("dataset").style.visibility = "hidden";
+      var select = document.getElementById("dropdown_menu");
+      var length = select.options.length;
+      for (i = length-1; i >= 0; i--) {
+        select.options[i] = null;
+      }
+      d3.select('#dropdown_menu').on('change', task2)
+      .selectAll('option')
+         .data(options_task2).enter()
+         .append('option')
+      .text(function (d) { return d; })
+      .attr('value', function (d) { return d; })
+   }
+
+   if(electValue=="Task-3"){
+
+      var select = document.getElementById("dropdown_menu");
+      var length = select.options.length;
+      for (i = length-1; i >= 0; i--) {
+        select.options[i] = null;
+      }
+
+      d3.select('#dropdown_menu').on('change', task3)
+         .selectAll('option')
+            .data(options_task3).enter()
+            .append('option')
+         .text(function (d) { return d; })
+         .attr('value', function (d) { return d; })  
+   }
+}
+
+function task2(){
+   electValue = d3.select('#dropdown_menu').property('value');
+   
+    d3.select('svg').selectAll('*').remove();
+   if(electValue=="Original"){
+      d3.select("svg").append("text")
+      .attr("class", "title")
+      .attr("x", width/2 + 150)
+      .attr("y", (margin.top / 2) + 25)
+      .attr("text-anchor", "middle")
+      .text("Scree Plot - Raw Data");
+
+      plotChart(data.original);
+   }
+   else if(electValue=="Random"){
+      d3.select("svg").append("text")
+      .attr("class", "title")
+      .attr("x", width/2 + 150)
+      .attr("y", (margin.top / 2) + 25)
+      .attr("text-anchor", "middle")
+      .text("Scree Plot - Random Sampling Data");
+
+      plotChart(data.random);
+   }
+   else if(electValue=="Stratified"){
+      d3.select("svg").append("text")
+      .attr("class", "title")
+      .attr("x", width/2 + 150)
+      .attr("y", (margin.top / 2) + 25)
+      .attr("text-anchor", "middle")
+      .text("Scree Plot - Stratified Sampling Data");
+
+      plotChart(data.stratified);  
+   }
+}
+
+function task3(){
+   electValue = d3.select('#dropdown_menu').property('value');
+   d3.select('svg').selectAll('*').remove();
+   // console.log(electValue);
+
+   if(electValue=='Top Two PCA Vectors'){
+      document.getElementById("toggle").style.visibility = "visible";
+      document.getElementById("dataset").style.visibility = "hidden";
+      var select = document.getElementById("toggle");
+      var length = select.options.length;
+      for (i = length-1; i >= 0; i--) {
+        select.options[i] = null;
+      }
+
+      d3.select('#toggle').on('change', scatterPlot)
+            .selectAll('option')
+               .data(options_task2).enter()
+               .append('option')
+            .text(function (d) { return d; })
+            .attr('value', function (d) { return d; })
+   }
+   else if(electValue=='MDS'){
+      document.getElementById("toggle").style.visibility = "visible";
+      var select = document.getElementById("toggle");
+      var length = select.options.length;
+      for (i = length-1; i >= 0; i--) {
+        select.options[i] = null;
+      }
+
+      d3.select('#toggle').on('change', scatterPlot)
+            .selectAll('option')
+               .data(distance).enter()
+               .append('option')
+            .text(function (d) { return d; })
+            .attr('value', function (d) { return d; })
+   }
+   else if(electValue=='ScatterPlot Matrix'){
+      document.getElementById("toggle").style.visibility = "visible";
+      document.getElementById("dataset").style.visibility = "hidden";
+
+      var select = document.getElementById("toggle");
+      var length = select.options.length;
+      for (i = length-1; i >= 0; i--) {
+        select.options[i] = null;
+      }
+
+      d3.select('#toggle').on('change', scatterPlot)
+            .selectAll('option')
+               .data(options_task2).enter()
+               .append('option')
+            .text(function (d) { return d; })
+            .attr('value', function (d) { return d; })
+   }
+}
+
+function scatterPlot(){
+   d3.select('svg').selectAll('*').remove();
+   toggle_value = d3.select('#toggle').property('value');
+   electValue = d3.select('#dropdown_menu').property('value')
+   console.log('scatterTask3_1 ' + toggle_value);
+
+   if(electValue=='Top Two PCA Vectors'){
+      if(toggle_value=='Original'){
+            
+            d3.select("svg").append("text")
+               .attr("class", "title")
+               .attr("x", width/2 + 150)
+               .attr("y", (margin.top / 2) + 25)
+               .attr("text-anchor", "middle")
+               .text("Scatter Plot - Top 2 PC Vectors (Raw Data)");
+
+         scatterTask3_1(data.scatter_original, '#2E1F1B', "#8FC1E3", data.original[0].Variance_Explained, data.original[1].Variance_Explained);
+      }
+      else if(toggle_value=='Random'){
+
+         d3.select("svg").append("text")
+               .attr("class", "title")
+               .attr("x", width/2 + 150)
+               .attr("y", (margin.top / 2) + 25)
+               .attr("text-anchor", "middle")
+               .text("Scatter Plot - Top 2 PC Vectors (Random Sampling Data)");
+
+         scatterTask3_1(data.scatter_random, '#FC4445', 'blue', data.random[0].Variance_Explained, data.random[1].Variance_Explained);
+      }
+      else if(toggle_value=='Stratified'){
+
+         d3.select("svg").append("text")
+               .attr("class", "title")
+               .attr("x", width/2 + 150)
+               .attr("y", (margin.top / 2) + 25)
+               .attr("text-anchor", "middle")
+               .text("Scatter Plot - Top 2 PC Vectors (Stratified Sampling Data)");
+
+         scatterTask3_1(data.scatter_stratified, '#116466', "white", data.stratified[0].Variance_Explained, data.stratified[1].Variance_Explained);
+      }
+   }
+   else if(electValue=='MDS'){
+      document.getElementById("dataset").style.visibility = "visible";
+      var select = document.getElementById("dataset");
+      var length = select.options.length;
+      for (i = length-1; i >= 0; i--) {
+        select.options[i] = null;
+      }
+
+      d3.select('#dataset').on('change', task3_2)
+            .selectAll('option')
+               .data(options_task2).enter()
+               .append('option')
+            .text(function (d) { return d; })
+            .attr('value', function (d) { return d; })
+   }
+   else if(electValue=='ScatterPlot Matrix'){
+
+      if(toggle_value=='Original'){
+
+         d3.select("svg").append("text")
+               .attr("class", "title")
+               .attr("x", width/2 + 150)
+               .attr("y", (margin.top / 2) + 25)
+               .attr("text-anchor", "middle")
+               .text("Scatter Plot Matrix - (Raw Data)");
+
+         scatterTask3_3(data.original, data.full_data, '#2E1F1B', "#8FC1E3");
+      }
+      else if(toggle_value=='Random'){
+
+         d3.select("svg").append("text")
+               .attr("class", "title")
+               .attr("x", width/2 + 150)
+               .attr("y", (margin.top / 2) + 25)
+               .attr("text-anchor", "middle")
+               .text("Scatter Plot Matrix - (Random Sampling Data)");
+
+         scatterTask3_3(data.random, data.random_data, 'white', 'blue');
+      }
+      else if(toggle_value=='Stratified'){
+
+         d3.select("svg").append("text")
+               .attr("class", "title")
+               .attr("x", width/2 + 150)
+               .attr("y", (margin.top / 2) + 25)
+               .attr("text-anchor", "middle")
+               .text("Scatter Plot Matrix - (Stratfied Sampling Data)");
+
+         scatterTask3_3(data.stratified, data.strat_data, '#116466', "white");
+      }
+
+   }
+}
+
+function task3_2(){
+   d3.select('svg').selectAll('*').remove();
+   distance_value = d3.select('#toggle').property('value');
+   dataset_value = d3.select('#dataset').property('value');
+
+   if(dataset_value=='Original'){
+
+      d3.select("svg").append("text")
+               .attr("class", "title")
+               .attr("x", width/2 + 150)
+               .attr("y", (margin.top / 2) + 25)
+               .attr("text-anchor", "middle")
+               .text("Scatter Plot - MDS (" + distance_value + " Distance) (Raw Data)");
+
+      scatterTask3_2(data.mds_orig, distance_value, '#17252A','#FC4445')
+   }
+   else if(dataset_value=='Random'){
+
+      d3.select("svg").append("text")
+               .attr("class", "title")
+               .attr("x", width/2 + 150)
+               .attr("y", (margin.top / 2) + 25)
+               .attr("text-anchor", "middle")
+               .text("Scatter Plot - MDS (" + distance_value + " Distance) (" + dataset_value + " Sampling Data)");
+
+      scatterTask3_2(data.mds_random, distance_value, '#45A29E', '#240090')
+   }
+   else if(dataset_value=='Stratified'){
+
+      d3.select("svg").append("text")
+               .attr("class", "title")
+               .attr("x", width/2 + 150)
+               .attr("y", (margin.top / 2) + 25)
+               .attr("text-anchor", "middle")
+               .text("Scatter Plot - MDS (" + distance_value + " Distance) (" + dataset_value + " Sampling Data)");
+
+      scatterTask3_2(data.mds_stratified, distance_value, 'red', 'black')
+   }
+}
+
+function scatterTask3_1(value, color, stroke, xlabel, ylabel){
+   
+   console.log(value);
+
+   var xaxis = d3.scaleLinear().range([0, width]).domain([d3.min(value, function(d) {return d.PC1;}) -1, d3.max(value, function(d) {return d.PC1;}) + 1]);
+   var yaxis = d3.scaleLinear().range([height, 0]).domain([d3.min(value, function(d) {return d.PC2;}) -1, d3.max(value, function(d) {return d.PC2;}) + 1]);
+
+   var svg = d3.select('svg')
+       .attr("width", width + margin.left + margin.right)
+       .attr("height", height + margin.top + margin.bottom)
+     .append("g")
+       .attr("class", "group")
+       .attr("transform",
+             "translate(" + margin.left + "," + margin.top + ")");
+       svg.append("rect")
+       .attr("width", width + 85)
+       .attr("height", height + 70)
+       .attr("x", '-70px')
+       .attr("y", '-15px')
+       .attr("style", "fill: #E3E2DF;stroke-width:1.5px;stroke:rgb(0,0,0);")
+
+   svg.selectAll(".scatterdot")
+      .data(value)
+    .enter().append("circle")
+      .attr("class", "scatterdot")
+      .attr("r", 3.5)
+      .attr("cx", function(d){ return xaxis(d.PC1);})
+      .attr("cy", function(d){ return yaxis(d.PC2);})
+      .attr("stroke", stroke)
+      .style("fill", color);
+
+   // Add the X Axis
+     svg.append("g")
+         .attr("class", "x_axis")
+         .attr("transform", "translate(0," + height + ")")
+         .call(d3.axisBottom(xaxis))
+         .append('text')
+         .attr('x', width/2 + 20)
+         .attr('y', 40)
+         .attr('fill', 'black')
+         .attr('font-family', 'sans-serif')
+         .attr('font-weight', 'bold')
+         .attr('font-size', '14px')
+         .text('PC1 - ' + xlabel + ' %');
+
+   // Add the Y Axis
+     svg.append("g")
+         .attr("class", "y_axis")
+         .call(d3.axisLeft(yaxis))
+         .append("text")
+         .attr("transform", "rotate(-90)")
+         .attr('y', -35)
+         .attr('x', -(height/2)+50)
+         .attr('fill', 'black')
+         .attr('font-family', 'sans-serif')
+         .attr('font-weight', 'bold')
+         .attr('font-size', '14px')
+         .text('PC2 - ' + ylabel + ' %');
+}
+
+function scatterTask3_2(value, dist, color, stroke){
+
+   if(dist=='Eucledian'){
+      Eucledian(value, color, stroke);
+   }
+   else{
+      Corelation(value, color, stroke)
+   }
+}
+
+function scatterTask3_3(value, dataset, color, stroke){
+
+   columns = [];
+   for(var i=0 ; i<3 ; i++){
+      keyValue = value[i].Attribute_Loadings.split(",")
+      columns[i] = keyValue[0].substring(2, keyValue[0].length-1);
+   }
+
+   var colDomain = {};
+   columns.forEach(function(col) {
+       colDomain[col] = d3.extent(dataset, function(d) { return d[col]; });
+     });
+
+   trimDataset = [];
+
+   dataset.forEach(function(row, i){
+      r = {};
+      columns.forEach(function(col) {
+         r[col] = row[col];
+      });
+      trimDataset[i] = r;
+   });
+   
+   size = 230,
+   padding = 20;
+
+   var x = d3.scaleLinear().range([padding / 2, size - padding / 2]);
+   var y = d3.scaleLinear().range([size - padding / 2, padding / 2]);
+
+   // var xAxis = d3.axisBottom().scale(x).ticks(6).tickSize(size * columns.length);
+   // var yAxis = d3.axisLeft().scale(y).ticks(6).tickSize(-size * columns.length);
+
+   var xAxis = d3.axisBottom().scale(x).ticks(6);
+   var yAxis = d3.axisLeft().scale(y).ticks(6);
+
+   // var color = d3.scale.category10();
+   // var color = d3.scaleOrdinal(d3.schemeCategory10);
+
+   // color = ['#481380', '#d7385e', '#b7472a'];
+
+   // for(var i = 0 ; i<trimDataset.length-3; i+=columns.length){
+
+
+   //    color[i] = '#481380';
+   //    color[i+1]
+   // }
+
+   var xDomains = [];
+   var yDomains = [];
+
+   for(var i=0 ; i<columns.length ; i++){
+      xDomains[i] = d3.scaleLinear().range([padding / 2, size - padding / 2]).domain(colDomain[columns[i]]);
+      yDomains[i] = d3.scaleLinear().range([padding / 2, size - padding / 2]).domain(colDomain[columns[i]]);
+   }
+
+
+   var svg = d3.select('svg')
+       .attr("width", width + margin.left + margin.right)
+       .attr("height", height + margin.top + margin.bottom + 300)
+     .append("g")
+       .attr("class", "group")
+       .attr("transform",
+             "translate(" + margin.left + "," + margin.top + ")");
+       svg.append("rect")
+       .attr("width", width)
+       .attr("height", height + margin.top + margin.bottom + 175)
+       .attr("x", '-70px')
+       .attr("y", '-15px')
+       .attr("style", "fill: #E3E2DF;stroke-width:1.5px;stroke:rgb(0,0,0);")
+
+     svg.selectAll(".x_Axis")
+         .data(columns)
+       .enter().append("g")
+         .attr("class", "x_Axis")
+         .attr("transform", function(d, i) { return "translate(" + (columns.length - i - 1) * size + ",0)"; })
+         .each(function(d, i) { xDomains[i]; d3.select(this).call(xAxis); });
+
+     svg.selectAll(".y_Axis")
+         .data(columns)
+       .enter().append("g")
+         .attr("class", "y_Axis")
+         .attr("transform", function(d, i) { return "translate(0," + i * size + ")"; })
+         .each(function(d, i) { yDomains[i]; d3.select(this).call(yAxis); });
+
+
+
+     var cell = svg.selectAll(".cell")
+         .data(d3.cross(d3.range(columns.length), d3.range(columns.length)))
+       .enter().append("g")
+         .attr("class", "cell")
+         .attr("transform", ([i, j]) => `translate(${i * size},${j * size})`);
+
+     cross = d3.cross(columns, columns);
+     
+      cell.filter(function(d, i) { return cross[i][0]==cross[i][1]; }).append("text")
+         .attr("x", size/2)
+         .attr("y", size/2)
+         .attr("text-anchor", "middle")
+         .text( function(d) { return cross[i][0];});
+
+      var text = d3.selectAll(".cell text")['_groups']['0'];
+
+      text.forEach(function(t,i){
+         t['textContent'] = columns[i];
+      })
+
+      cell.append("rect")
+           .attr("class", "frame")
+           .attr("x", padding / 2)
+           .attr("y", padding / 2)
+           .attr("width", size - padding)
+           .attr("height", size - padding);
+
+      cell.each(function([i, j]) {
+         if(i!=j){
+          d3.select(this).selectAll("circle")
+            .data(trimDataset)
+            .enter().append("circle")
+              .attr("id", function(d, i) { return '' + i;})
+              .attr("cx", d => xDomains[i](d[columns[i]]))
+              .attr("cy", d => yDomains[j](d[columns[j]]))
+              .attr("r", 4)
+              .attr("stroke", stroke)
+              .style("fill", color);
+        }
+      });
+
+      console.log(svg.attr("width"));
+      svg.append("text")
+         .attr("x", (size - padding)*1.5 - 20)
+         .attr("y", (size - padding)*3 + 100)
+         .attr('font-family', 'times-new-roman')
+         .attr('font-size', '15px')
+         .attr('font-weight', 'bold')
+         .text("Top 3 Attributes");
+
+      svg.append("text")
+         .attr("transform", "rotate(-90)")
+         .attr('y', -35)
+         .attr('x', -(height+100))
+         .attr('fill', 'black')
+         .attr('font-family', 'sans-serif')
+         .attr('font-weight', 'bold')
+         .attr('font-size', '14px')
+         .text('Top 3 Attributes');
+}
+
+function Eucledian(value, color, stroke){
+   var xaxis = d3.scaleLinear().range([0, width]).domain([d3.min(value, function(d) {return d.MDS1_euc;}) -1, d3.max(value, function(d) {return d.MDS1_euc;}) + 1]);
+   var yaxis = d3.scaleLinear().range([height, 0]).domain([d3.min(value, function(d) {return d.MDS2_euc;}) -1, d3.max(value, function(d) {return d.MDS2_euc;}) + 1]);
+
+   var svg = d3.select('svg')
+       .attr("width", width + margin.left + margin.right)
+       .attr("height", height + margin.top + margin.bottom)
+     .append("g")
+       .attr("class", "group")
+       .attr("transform",
+             "translate(" + margin.left + "," + margin.top + ")");
+       svg.append("rect")
+       .attr("width", width + 85)
+       .attr("height", height + 70)
+       .attr("x", '-70px')
+       .attr("y", '-15px')
+       .attr("style", "fill: #E3E2DF;stroke-width:1.5px;stroke:rgb(0,0,0);")
+
+   svg.selectAll(".scatterdot")
+      .data(value)
+    .enter().append("circle")
+      .attr("class", "scatterdot")
+      .attr("r", 3.5)
+      .attr("cx", function(d){ return xaxis(d.MDS1_euc);})
+      .attr("cy", function(d){ return yaxis(d.MDS2_euc);})
+      .attr("stroke", stroke)
+      .style("fill", color);
+
+   // Add the X Axis
+     svg.append("g")
+         .attr("class", "x_axis")
+         .attr("transform", "translate(0," + height + ")")
+         .call(d3.axisBottom(xaxis))
+         // .call(d3.axisBottom(xaxis).ticks(value.length))
+         .append('text')
+         .attr('x', width/2 + 20)
+         .attr('y', 40)
+         .attr('fill', 'black')
+         .attr('font-family', 'sans-serif')
+         .attr('font-weight', 'bold')
+         .attr('font-size', '14px')
+         .text('MDS1');
+
+   // Add the Y Axis
+     svg.append("g")
+         .attr("class", "y_axis")
+         .call(d3.axisLeft(yaxis))
+         .append("text")
+         .attr("transform", "rotate(-90)")
+         .attr('y', -35)
+         .attr('x', -(height/2)+50)
+         .attr('fill', 'black')
+         .attr('font-family', 'sans-serif')
+         .attr('font-weight', 'bold')
+         .attr('font-size', '14px')
+         .text('MDS2');
+}
+
+function Corelation(value, color, stroke){
+   var xaxis = d3.scaleLinear().range([0, width]).domain([d3.min(value, function(d) {return d.MDS1_cor;}) -1, d3.max(value, function(d) {return d.MDS1_cor;}) + 1]);
+   var yaxis = d3.scaleLinear().range([height, 0]).domain([d3.min(value, function(d) {return d.MDS2_cor;}) -1, d3.max(value, function(d) {return d.MDS2_cor;}) + 1]);
+   // var xaxis = d3.scaleLinear().range([0, width]).domain([-0.01, 0.01]);
+   // var yaxis = d3.scaleLinear().range([height, 0]).domain([-0.01, 0.01]);
+
+   var svg = d3.select('svg')
+       .attr("width", width + margin.left + margin.right)
+       .attr("height", height + margin.top + margin.bottom)
+     .append("g")
+       .attr("class", "group")
+       .attr("transform",
+             "translate(" + margin.left + "," + margin.top + ")");
+       svg.append("rect")
+       .attr("width", width + 85)
+       .attr("height", height + 70)
+       .attr("x", '-70px')
+       .attr("y", '-15px')
+       .attr("style", "fill: #E3E2DF;stroke-width:1.5px;stroke:rgb(0,0,0);")
+
+   svg.selectAll(".scatterdot")
+      .data(value)
+    .enter().append("circle")
+      .attr("class", "scatterdot")
+      .attr("r", 3.5)
+      .attr("cx", function(d){ return xaxis(d.MDS1_cor);})
+      .attr("cy", function(d){ return yaxis(d.MDS2_cor);})
+      .attr("stroke", stroke)
+      .style("fill", color);
+
+   // Add the X Axis
+     svg.append("g")
+         .attr("class", "x_axis")
+         .attr("transform", "translate(0," + height + ")")
+         .call(d3.axisBottom(xaxis))
+         // .call(d3.axisBottom(xaxis).ticks(value.length))
+         .append('text')
+         .attr('x', width/2 + 20)
+         .attr('y', 40)
+         .attr('fill', 'black')
+         .attr('font-family', 'sans-serif')
+         .attr('font-weight', 'bold')
+         .attr('font-size', '15px')
+         .text('MDS1');
+
+   // Add the Y Axis
+     svg.append("g")
+         .attr("class", "y_axis")
+         .call(d3.axisLeft(yaxis))
+         .append("text")
+         .attr("transform", "rotate(-90)")
+         .attr('y', -35)
+         .attr('x', -(height/2)+50)
+         .attr('fill', 'black')
+         .attr('font-family', 'sans-serif')
+         .attr('font-weight', 'bold')
+         .attr('font-size', '15px')
+         .text('MDS2');
+}
+
+function plotChart(value){
+   // set the ranges
+   var xaxis = d3.scaleLinear().range([0, width]).domain([0, d3.max(value, function(d) { return d.PC_Number; }) + 1]);
+   var yaxis = d3.scaleLinear().range([height, 0]).domain([0, 110]);
+
+   var cumulative = [];
+   var index;
+
+   var xpixel;
+   var ypixel;
+   var yrange = [];
+
+   function intrinsicDimension(value){
+      var done = false;
+      var sum = 0;
+      var temp;
+      for(var i=0 ; i<value.length ; i++){
+         if(done==false && sum>=75){
+            index = i;
+            done = true;
+            temp = sum;
+         }
+         sum += value[i].Variance_Explained;
+         cumulative[i] = sum;
+      }
+
+      xpixel = xaxis((index/temp) * 75 - 0.2);
+      //console.log(index);
+      //console.log(temp);
+      
+      // xpixel = xaxis(value[index].PC_Number) - yaxis(temp - 75);
+      ypixel = yaxis(75);
+      // console.log(xaxis(value[index-1].PC_Number));
+      // console.log(xpixel);
+      // console.log(xaxis(value[index+1].PC_Number));
+      // console.log(ypixel); 
+      //console.log(value.length);  
+      // t = ypixel;
+
+      // while(t<450){
+
+      // }
+
+   }
+
+   intrinsicDimension(value);
+
+   // define the line
+   var valueline = d3.line()
+       .x(function(d){ return xaxis(d.PC_Number);})
+       .y(function(d){ return yaxis(d.Variance_Explained);});
+      // .curve(d3.curveMonotoneX);
+
+   var valueline2 = d3.line()
+      .x(function(d){ return xaxis(d.PC_Number);})
+      .y(function(d, i){ return yaxis(cumulative[i]);});
+
+   // var verticalLine = d3.line()
+   //    .x(function(d){ return xpixel;})
+   //    .y(function(d, i){ return ypixel + yaxis(i+80);});
+
+   var svg = d3.select('svg')
+       .attr("width", width + margin.left + margin.right)
+       .attr("height", height + margin.top + margin.bottom)
+     .append("g")
+       .attr("class", "group")
+       .attr("transform",
+             "translate(" + margin.left + "," + margin.top + ")");
+     svg.append("rect")
+       .attr("width", width + 85)
+       .attr("height", height + 70)
+       .attr("x", '-70px')
+       .attr("y", '-15px')
+       .attr("style", "fill: #E3E2DF;stroke-width:1.5px;stroke:rgb(0,0,0);");
+
+   // Add the Principal Component Bars.
+      svg.selectAll("bar")
+        .data(value)
+         .enter()
+         .append("rect")
+         .attr("class", "bar")
+         .attr("fill", "#25274D")
+         .attr("stroke", "red")
+         .attr("stroke-width", "2px")
+         .attr("x", function(d){ return xaxis(d.PC_Number-0.3); })
+         .attr("y", function(d){ return yaxis(d.Variance_Explained); })
+         .attr("width", '50px')
+         .attr("height", function(d){ return height - yaxis(d.Variance_Explained); });
+
+     // svg.append("path")
+     //     .datum(value)
+     //     .attr("class", "line")
+     //     .attr("d", valueline);
+
+     //  svg.selectAll(".dot")
+     //   .data(value)
+     // .enter().append("circle") 
+     //     .attr("class", "dot")
+     //   .attr("cx", function(d, i) { return xaxis(d.PC_Number) })
+     //   .attr("cy", function(d) { return yaxis(d.Variance_Explained) })
+     //   .attr("r", 5);
+
+   // Add the Cumulative Variance Explained path.
+     svg.append("path")
+         .datum(value)
+         .attr("class", "line2")
+         .attr("d", valueline2);
+
+      svg.selectAll(".dot2")
+       .data(value)
+     .enter().append("circle") 
+       .attr("class", "dot2")
+       .attr("cx", function(d) { return xaxis(d.PC_Number) })
+       .attr("cy", function(d, i) { return yaxis(cumulative[i]) })
+       .attr("r", 5);
+
+   // Add Vertical Line
+   // svg.append("path")
+   //       .datum(value)
+   //       .attr("class", "line3")
+   //       .style("stroke-dasharray", ("3, 3"))
+   //       .attr("d", verticalLine);
+
+   // Add Intrinsic Dimensionality Point
+      d3.select(".group")
+         .append("circle")
+            .attr("class", "intrinsic")
+            .attr("cx", xpixel)
+            .attr("cy", ypixel)
+            .attr("r", 5);
+
+   // Add the X Axis
+     svg.append("g")
+         .attr("class", "x_axis")
+         .attr("transform", "translate(0," + height + ")")
+         .call(d3.axisBottom(xaxis))
+         // .call(d3.axisBottom(xaxis).ticks(value.length))
+         .append('text')
+         .attr('x', width/2 + 20)
+         .attr('y', 40)
+         .attr('fill', 'black')
+         .attr('font-family', 'sans-serif')
+         .attr('font-size', '14px')
+         .attr('font-weight', 'bold')
+         .text("Principal Component Number");
+
+   // Add the Y Axis
+     svg.append("g")
+         .attr("class", "y_axis")
+         .call(d3.axisLeft(yaxis))
+         .append("text")
+         .attr("transform", "rotate(-90)")
+         .attr('y', -35)
+         .attr('x', -(height/2)+50)
+         .attr('fill', 'black')
+         .attr('font-family', 'sans-serif')
+         .attr('font-weight', 'bold')
+         .attr('font-size', '14px')
+         .text('% Variance Explained');
+
+   // Add Legend
+
+         svg.append("rect")
+          .attr("width", 225)
+          .attr("height", 105)
+          .attr("x", width - 210)
+          .attr("y", height + 70)
+          .attr("style", "fill: #EDC7B7;stroke-width:1.5px;stroke:rgb(0,0,0);");
+
+         svg.append("text")
+         .attr("class", "legend")
+         .attr("x", width-120)
+         .attr("y", height + 90)
+         .attr('font-family', 'times-new-roman')
+         .attr('font-size', '15px')
+         .attr('font-weight', 'bold')
+         .attr('text-decoration', 'underline')
+         .text("Legend");
+
+   // Add Intrinsic Dimension Legend
+         svg.append("circle")
+         .attr("cx", xaxis(8.5))
+         .attr("cy", 440)
+         .attr('fill', '#F1F3F3')
+         .attr('stroke', '#6F257F')
+         .attr('stroke-width', '5px')
+         .attr("r", 6);
+
+         svg.append("text")
+         .attr("x", width-180)
+         .attr("y", 445)
+         .attr('font-family', 'times-new-roman')
+         .attr('font-size', '15px')
+         .text("Intrinsic Dimension");
+
+   // Add Principal Component Number Legend
+         svg.append("circle")
+         .attr("cx", xaxis(8.5))
+         .attr("cy", 460)
+         .attr('fill', '#25274D')
+         .attr('stroke', 'red')
+         .attr('stroke-width', '3px')
+         .attr("r", 7);
+
+         svg.append("text")
+         .attr("x", width-180)
+         .attr("y", 465)
+         .attr('font-family', 'times-new-roman')
+         .attr('font-size', '15px')
+         .text("Variance of PCs");
+
+   // Add Cumulative Variance Legend
+         svg.append("circle")
+         .attr("cx", xaxis(8.5))
+         .attr("cy", 480)
+         .attr('fill', '#116466')
+         .attr("r", 7);
+
+         svg.append("text")
+         .attr("x", width-180)
+         .attr("y", 485)
+         .attr('font-family', 'times-new-roman')
+         .attr('font-size', '15px')
+         .text("Cumulative Variance Explained");
+
+   // Add 3 Highest Attributes
+      svg.append("rect")
+          .attr("width", 280)
+          .attr("height", 100)
+          .attr("x", 10)
+          .attr("y", height + 70)
+          .attr("style", "fill: #EDC7B7;stroke-width:1.5px;stroke:rgb(0,0,0);");
+
+      svg.append("text")
+      .attr("class", "HighAttribute")
+      .attr("x", 20)
+      .attr("y", height + 90)
+      .attr('font-family', 'times-new-roman')
+      .attr('font-size', '15px')
+      .attr('font-weight', 'bold')
+      .attr('text-decoration', 'underline')
+      .text("3 Attributes with Highest PCA Loadings");
+
+      // svg.append("text")
+      //    .attr("x", 40)
+      //    .attr("y", height + 110 )
+      //    .attr('font-family', 'times-new-roman')
+      //    .attr('font-size', '15px')
+      //    .attr('font-weight', 'bold')
+      //    .text( "Attribute : % Contribution");
+
+      for(var i=0 ; i<3 ; i++){
+         var keyValue = value[i].Attribute_Loadings.split(",");
+         var key = keyValue[0].substring(2, keyValue[0].length-1);
+         var val = parseFloat(keyValue[1].substring(0,5))*100;
+
+         svg.append("text")
+         .attr("x", 100)
+         .attr("y", height + 120 + (i*20))
+         .attr('font-family', 'times-new-roman')
+         .attr('font-size', '15px')
+         .text(key + " :  " + val + "%");
+
+      }
+}
+
+</script>
+   </body>
+</html>
