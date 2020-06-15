@@ -101,3 +101,5 @@ Correlation Distance
 
 <img src="./Screenshots/stratmatrix.JPG" width="450">
 
+## Youtube Link:
+https://www.youtube.com/watch?v=tTgrkyfKcsM&t=3s
