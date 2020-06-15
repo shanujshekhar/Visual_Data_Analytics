@@ -41,6 +41,63 @@ Performing common visual data analytic tasks using Python and D3.js.
 - Three attributes with highest PCA loadings
 
 ## 2D Scatter Plot Visualizations
-- Using top two PCA vectors
-- Using MDS (Euclidian & correlation distance)
-- Scatterplot matrix of the three highest PCA loaded attributes
+
+### Using top two PCA vectors
+
+- Raw Data
+
+<img src="./Screenshots/scatterraw.JPG" width="450">
+
+- Random Sampled Data
+
+<img src="./Screenshots/scatterrandom.JPG" width="450">
+
+- Stratified Sampled Data
+
+<img src="./Screenshots/scatterstrat.JPG" width="450">
+
+### Using MDS (Euclidian & correlation distance)
+
+Euclidiean Distance
+
+- Raw Data
+
+<img src="./Screenshots/mdseuc.JPG" width="450">
+
+- Random Sampled Data
+
+<img src="./Screenshots/rand_mds_euc.JPG" width="450">
+
+- Stratified Sampled Data
+
+<img src="./Screenshots/strat_euc.JPG" width="450">
+
+Correlation Distance
+
+- Raw Data
+
+<img src="./Screenshots/mdscor.JPG" width="450">
+
+- Random Sampled Data
+
+<img src="./Screenshots/rand_mds_cor.JPG" width="450">
+
+- Stratified Sampled Data
+
+<img src="./Screenshots/strat_cor.JPG" width="450">
+
+
+### Scatterplot matrix of the three highest PCA loaded attributes
+
+- Raw Data
+
+<img src="./Screenshots/rawmatrix.JPG" width="450">
+
+- Random Sampled Data
+
+<img src="./Screenshots/randommatrix.JPG" width="450">
+
+- Stratified Sampled Data
+
+<img src="./Screenshots/stratmatrix.JPG" width="450">
+
